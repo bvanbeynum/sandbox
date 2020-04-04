@@ -1,0 +1,14 @@
+{
+  "name": "sandbox",
+  "version": "0.0.0",
+  "description": "Sandbox for testing",
+  "main": "server.js",
+  "repository": "",
+  "author": "",
+  "dependencies": {
+    "express": "4.x",
+    "mongoose": "*",
+    "mongodb": "2.x",
+    "body-parser": "1.x"
+  }
+}

@@ -1,0 +1,150 @@
+<!doctype html>
+<html ng-app="brettCoApp">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.css">
+<style>
+sensor {
+	display: block;
+	width: 100%;
+	overflow-x: auto;
+	background-color: rgb(240,240,240);
+}
+</style>
+</head>
+<body ng-controller="sensorCtl" ng-cloak>
+
+<div layout="row" layout-align="center" ng-show="!loading">
+	<md-card flex="80">
+		<md-toolbar>
+			<div class="md-toolbar-tools">
+				<h2>Sensor Information</h2>
+			</div>
+		</md-toolbar>
+		
+		<md-card-content layout="column" layout-align="center">
+			<sensor sensors="sensors" loading="loading"></sensor>
+		</md-card-content>
+	</md-card>
+</div>
+
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-aria.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-messages.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
+<script src="//d3js.org/d3.v4.min.js"></script>
+
+<script type="text/javascript">
+/* global d3 */
+/* global angular */
+var log = {};
+
+var brettCoApp = angular.module("brettCoApp", ["ngMaterial", "ngMessages"]);
+
+brettCoApp.config(["$mdDialogProvider", "$mdThemingProvider", function ($mdDialogProvider, $mdThemingProvider) {
+	$mdThemingProvider.theme("default")
+		.primaryPalette("green")
+		.accentPalette("deep-orange");
+	
+	$mdDialogProvider.addPreset("loadingDialog", {
+		options: function () {
+			return {
+				template: 
+					"<md-dialog aria-label='Loading'>" +
+					"	<md-toolbar>" +
+					"		<div class='md-toolbar-tools'>" +
+					"			<h2>Loading Sensor Data</h2>" +
+					"		</div>" +
+					"	</md-toolbar>" +
+					"</md-dialog>",
+				controllerAs: "dialog",
+				bindToController: true,
+				clickOutsideToClose: false,
+				escapeToClose: false
+			};
+		}
+	});
+}]);
+
+brettCoApp.controller("sensorCtl", function ($scope, $mdDialog, $http) {
+	log.scope = $scope;
+	
+	$scope.loading = true;
+	$mdDialog.show($mdDialog.loadingDialog());
+	
+	$http.get("http://sandbox.beynum.com/getsensor")
+		.then(function (response) {
+			$scope.sensors = d3.nest()
+				.key(function (data) { return data.type; })
+				.entries(response.data)
+				.map(function (grouped) { 
+					return {
+						name: grouped.key, 
+						data: grouped.values.map(function (data) { 
+							return {action: data.action, timestamp: new Date(data.timestamp)}; 
+						})	
+					};
+				});
+			
+			$mdDialog.hide($mdDialog.loadingDialog());
+			$scope.loading = false;
+		}, function (response) {
+			console.log(response.error);
+			$mdDialog.hide($mdDialog.loadingDialog());
+		});
+});
+
+brettCoApp.directive("sensor", function () {
+	this.buildGraph = function (scope, element) {
+		var times = scope.sensors
+				.reduce(function (array, sensor) {
+					return array.concat(sensor.data.map(function (logs) { return logs.timestamp; }));
+				}, []),
+			padding = { top: 20, right: 20, bottom: 40, left: 40},
+			start = d3.min(times),
+			end = d3.max(times),
+			inner = {
+				width: Math.round((end - start) / (1000 * 60 * 60)) * 100,
+				height: scope.sensors.length * 200
+			},
+			outer = {
+				width: inner.width + padding.left + padding.right,
+				height: inner.height + padding.top + padding.bottom
+			},
+			convert = {
+				x: d3.scaleTime(),
+				y: d3.scaleOrdinal()
+			};
+		
+		convert.x.range([0, inner.width]);
+		convert.x.domain([start, end]);
+		
+		convert.y.range([0, inner.height]);
+		convert.y.domain([0, scope.sensors.length]);
+		
+		var svg = d3.select(element[0])
+			.append("svg")
+			.attr("width", outer.width)
+			.attr("height", outer.height);
+	};
+	
+	return {
+		restrict: "E",
+		scope: {
+			loading: "=",
+			sensors: "="
+		},
+		link: function (scope, element) {
+			scope.$watch("loading", function (isLoading) {
+				if (!isLoading) {
+					this.buildGraph(scope, element);
+				}
+			});
+		}
+	};
+});
+</script>
+
+</body>
+</html>

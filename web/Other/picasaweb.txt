@@ -1,0 +1,13 @@
+https://www.googleapis.com/oauth2/v3/token
+client_secret=7CsH2WXn6V1olP54TkjTrKbo&grant_type=refresh_token&refresh_token=1%2FV-hQwIbHezUvQMmpKgFUq5kSDwDGaH71iL6lhvIwkPs&client_id=743032936512-q4g7hgdt65ds6orrh25v5diaklqtj4ao.apps.googleusercontent.com
+$.post("https://www.googleapis.com/oauth2/v3/token", "client_secret=7CsH2WXn6V1olP54TkjTrKbo&grant_type=refresh_token&refresh_token=1%2FV-hQwIbHezUvQMmpKgFUq5kSDwDGaH71iL6lhvIwkPs&client_id=743032936512-q4g7hgdt65ds6orrh25v5diaklqtj4ao.apps.googleusercontent.com").done(function (d) { response = d; console.log("s") }).fail(function (e) { console.log(e) })
+
+Get Albums
+https://picasaweb.google.com/data/feed/api/user/default?alt=json&access_token=
+
+Get Album
+https://picasaweb.google.com/data/feed/api/user/default/albumid/1000000476027642?alt=json&access_token=
+$.get("https://picasaweb.google.com/data/feed/api/user/default/albumid/1000000476027642?alt=json&start-index=1000&access_token=" + token).done(function (r) { response = r; console.log("s") }).fail(function (e) { console.log(e) })
+
+
+var vaca = photos.filter(function (p) { return p.geoCode && distance(35.046389, -81.013503, p.geoCode.lat, p.geoCode.long) > 100 })
